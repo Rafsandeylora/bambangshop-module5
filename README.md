@@ -104,3 +104,56 @@ Singleton pattern bertujuan untuk memastikan bahwa hanya ada satu instance objek
 Di sisi lain, `DashMap` memang secara khusus menyelesaikan masalah concurrency dengan menyediakan implementasi map yang thread-safe. Dengan begitu, data dapat diakses dan dimodifikasi bersama dengan cara yang lebih aman dan lebih praktis dalam program konkuren.
 
 Karena itu, kalaupun kita ingin menerapkan Singleton untuk repository, data di dalam Singleton tersebut tetap sebaiknya menggunakan struktur data yang thread-safe seperti `DashMap` (atau alternatif lain seperti `Mutex<HashMap<...>>` atau `RwLock<HashMap<...>>`). Jadi kesimpulannya: Singleton bisa membantu memastikan hanya ada satu instance repository, tetapi Singleton tidak menghilangkan kebutuhan terhadap `DashMap` atau struktur data thread-safe lainnya.
+
+## Reflection Publisher-2
+
+### 1. Dalam compound pattern Model-View-Controller (MVC), tidak ada “Service” dan “Repository”. Model pada MVC mencakup penyimpanan data dan business logic. Berdasarkan pemahamanmu tentang design principles, mengapa kita perlu memisahkan “Service” dan “Repository” dari Model?
+
+Menurut saya, pemisahan `Service` dan `Repository` dari `Model` diperlukan agar setiap komponen memiliki tanggung jawab yang lebih jelas dan spesifik. Jika semua hal dimasukkan ke dalam `Model`, maka satu class atau struct akan menangani terlalu banyak urusan sekaligus, seperti representasi data, validasi, business logic, dan akses data. Hal ini bertentangan dengan **Single Responsibility Principle**, karena satu komponen seharusnya hanya punya satu alasan untuk berubah.
+
+`Model` sebaiknya fokus pada representasi data dan aturan dasar yang melekat pada data tersebut.  
+`Repository` bertugas mengatur penyimpanan, pengambilan, penambahan, dan penghapusan data.  
+`Service` bertugas mengatur alur business logic dan koordinasi antar model/repository.
+
+Dengan pemisahan ini, kode menjadi lebih mudah dipahami, diuji, dan dikembangkan. Jika suatu saat cara penyimpanan data berubah, kita cukup mengubah `Repository` tanpa harus mengubah `Model` atau `Controller`. Jika business logic berubah, kita cukup menyesuaikan `Service`. Jadi, pemisahan ini membantu menjaga modularitas, maintainability, dan testability dari aplikasi.
+
+### 2. Apa yang terjadi jika kita hanya menggunakan Model? Jelaskan bayanganmu tentang bagaimana interaksi antar model (Program, Subscriber, Notification) memengaruhi kompleksitas kode pada masing-masing model.
+
+Kalau kita hanya menggunakan `Model`, menurut saya kompleksitas kode akan meningkat cukup signifikan. Setiap model tidak hanya menyimpan data, tetapi juga harus menangani logika proses dan interaksi dengan model lain. Akibatnya, tiap model akan menjadi terlalu “gemuk” dan sulit dipelihara.
+
+Sebagai contoh:
+- `Program` tidak hanya perlu menyimpan data program, tetapi juga harus tahu bagaimana cara mencari subscriber yang relevan, membuat notification, dan memicu pengiriman notifikasi.
+- `Subscriber` tidak hanya menyimpan data subscriber, tetapi mungkin juga harus tahu bagaimana cara subscribe/unsubscribe dirinya ke daftar tertentu.
+- `Notification` tidak hanya merepresentasikan notifikasi, tetapi bisa ikut menanggung proses pembuatan format pesan atau alur pengirimannya.
+
+Kalau semua tanggung jawab ini ditaruh di model, maka akan terjadi coupling yang tinggi antar model. `Program` akan terlalu bergantung pada `Subscriber` dan `Notification`, begitu juga sebaliknya. Akibatnya:
+1. kode menjadi lebih panjang dan kompleks,
+2. sulit mengetahui batas tanggung jawab tiap model,
+3. perubahan kecil pada satu model bisa memengaruhi model lain,
+4. pengujian menjadi lebih sulit karena setiap model saling terkait erat.
+
+Jadi, kalau hanya menggunakan `Model`, interaksi antar `Program`, `Subscriber`, dan `Notification` akan membuat masing-masing model menjadi lebih rumit, lebih sulit diuji, dan lebih sulit dikembangkan di masa depan.
+
+### 3. Apakah kamu sudah mengeksplor lebih jauh tentang Postman? Ceritakan bagaimana tool ini membantu kamu menguji pekerjaanmu saat ini. Kamu juga boleh menyebutkan fitur Postman apa yang menurutmu menarik atau membantu untuk Group Project atau project software engineering lain di masa depan.
+
+Ya, saya sudah mulai mengeksplor Postman, dan menurut saya tool ini sangat membantu untuk menguji API dengan cepat tanpa harus membuat frontend terlebih dahulu. Dalam pekerjaan saat ini, Postman membantu saya mengirim HTTP request ke endpoint yang saya buat, seperti endpoint untuk subscribe dan unsubscribe notification. Dengan Postman, saya bisa langsung mengecek apakah request berhasil, bagaimana response yang dikembalikan, dan apakah format JSON yang saya kirim sudah sesuai.
+
+Postman membantu saya dalam beberapa hal:
+- menguji endpoint secara manual dengan cepat,
+- melihat status response seperti `200 OK`, `201 Created`, atau `404 Not Found`,
+- mencoba berbagai payload JSON tanpa perlu mengubah kode aplikasi,
+- mempermudah debugging karena saya bisa membandingkan request dan response secara langsung.
+
+Fitur Postman yang menurut saya menarik dan berguna:
+1. **Collections**  
+   Sangat membantu untuk menyimpan sekumpulan request agar pengujian bisa dilakukan berulang kali dengan lebih rapi.
+2. **Environment Variables**  
+   Memudahkan jika nanti project memiliki banyak base URL atau konfigurasi yang berbeda antara local, staging, dan production.
+3. **Request History**  
+   Berguna untuk melacak request yang pernah diuji sebelumnya.
+4. **Automated Testing / Scripts**  
+   Menarik untuk dipelajari lebih lanjut karena bisa membantu membuat pengujian API yang lebih konsisten.
+5. **Sharing Collection**  
+   Sangat berguna untuk Group Project karena anggota tim bisa memakai request yang sama tanpa harus membuat ulang satu per satu.
+
+Menurut saya, Postman adalah tool yang sangat praktis untuk software engineering project karena mempercepat proses testing, debugging, dan kolaborasi dalam pengembangan API.
