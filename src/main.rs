@@ -13,5 +13,5 @@ fn rocket() -> _ {
     dotenv().ok();
     rocket::build()
         .manage(reqwest::Client::builder().build().unwrap())
-        .attach(route_stage())
+        .attach(controller::route_stage())
 }
