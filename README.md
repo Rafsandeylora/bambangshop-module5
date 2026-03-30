@@ -76,8 +76,31 @@ This is the place for you to write reflections:
 
 ### Mandatory (Publisher) Reflections
 
-#### Reflection Publisher-1
+## Reflection Publisher-1
 
-#### Reflection Publisher-2
+### 1. Pada diagram Observer Pattern yang dijelaskan di buku *Head First Design Patterns*, Subscriber didefinisikan sebagai interface. Berdasarkan pemahamanmu tentang Observer pattern, apakah pada kasus BambangShop ini kita masih memerlukan interface (atau trait di Rust), atau cukup satu Model struct saja?
 
-#### Reflection Publisher-3
+Menurut saya, untuk kasus BambangShop saat ini, satu struct `Subscriber` saja sudah cukup.  
+Alasannya adalah karena pada tutorial ini semua subscriber masih memiliki tanggung jawab yang sama, yaitu menyimpan data subscriber seperti URL/endpoint dan menerima update dari publisher dengan cara yang seragam. Dengan kata lain, saat ini kita baru punya satu bentuk perilaku subscriber yang konkret.
+
+Namun, jika dilihat dari sudut pandang design pattern, penggunaan interface atau trait tetap merupakan desain yang lebih extensible. Dalam Observer pattern, publisher idealnya bergantung pada abstraksi, bukan implementasi konkret, sehingga jika nanti ada jenis subscriber baru, publisher tidak perlu diubah. Misalnya, di masa depan BambangShop ingin mendukung subscriber berbasis HTTP, logging, message queue, atau in-memory subscriber, maka trait akan menjadi pilihan yang lebih tepat.
+
+Jadi, untuk kebutuhan tutorial saat ini, satu struct sudah cukup dan lebih sederhana. Tetapi untuk desain jangka panjang yang lebih fleksibel dan lebih sesuai dengan bentuk klasik Observer pattern, penggunaan trait akan lebih baik.
+
+### 2. `id` pada Program dan `url` pada Subscriber dimaksudkan untuk bersifat unik. Berdasarkan pemahamanmu, apakah penggunaan `Vec` (list) sudah cukup atau penggunaan `DashMap` (map/dictionary) seperti yang dipakai sekarang memang diperlukan?
+
+`Vec` sebenarnya cukup untuk implementasi yang kecil dan sederhana, karena kita masih bisa menyimpan semua subscriber dalam list lalu melakukan pengecekan manual agar tidak ada `id` atau `url` yang duplikat sebelum data baru dimasukkan. Untuk skala tutorial, pendekatan ini masih bisa bekerja dengan benar.
+
+Namun, `DashMap` lebih cocok untuk kasus ini karena keunikan data merupakan kebutuhan inti. Struktur map secara alami memang dirancang untuk merepresentasikan key yang unik, sehingga proses pengecekan, penambahan, pembaruan, dan penghapusan data menjadi lebih langsung dan lebih efisien dibandingkan `Vec`. Jika memakai `Vec`, operasi seperti mencari subscriber tertentu atau menghapus data akan membutuhkan iterasi terhadap seluruh isi list, dan hal ini kurang efisien ketika jumlah subscriber bertambah banyak.
+
+Selain itu, project ini berjalan dalam konteks web app dengan shared state yang bisa diakses oleh beberapa request. `DashMap` dirancang untuk akses konkuren yang aman, sehingga lebih sesuai dibandingkan `Vec` biasa. Jadi, walaupun `Vec` memungkinkan, `DashMap` adalah pilihan yang lebih baik dari sisi keunikan data, efisiensi, dan thread safety.
+
+### 3. Saat menggunakan Rust, kita dipaksa oleh compiler constraint yang ketat untuk membuat program yang thread-safe. Dalam kasus static variable `SUBSCRIBERS`, kita menggunakan library eksternal `DashMap` untuk membuat `HashMap` yang thread-safe. Berdasarkan pemahamanmu tentang design pattern, apakah kita masih memerlukan `DashMap`, atau kita bisa menggantinya dengan Singleton pattern?
+
+Menurut saya, `DashMap` dan Singleton pattern menyelesaikan dua masalah yang berbeda, jadi Singleton tidak bisa langsung menggantikan `DashMap`.
+
+Singleton pattern bertujuan untuk memastikan bahwa hanya ada satu instance objek yang digunakan secara bersama di seluruh aplikasi. Ini berguna jika kita ingin mempunyai satu titik akses global terhadap shared data. Namun, Singleton sendiri tidak otomatis membuat data di dalamnya menjadi thread-safe. Jika ada banyak thread yang mengakses dan mengubah state yang sama, kita tetap membutuhkan mekanisme sinkronisasi atau struktur data yang memang aman untuk concurrency.
+
+Di sisi lain, `DashMap` memang secara khusus menyelesaikan masalah concurrency dengan menyediakan implementasi map yang thread-safe. Dengan begitu, data dapat diakses dan dimodifikasi bersama dengan cara yang lebih aman dan lebih praktis dalam program konkuren.
+
+Karena itu, kalaupun kita ingin menerapkan Singleton untuk repository, data di dalam Singleton tersebut tetap sebaiknya menggunakan struktur data yang thread-safe seperti `DashMap` (atau alternatif lain seperti `Mutex<HashMap<...>>` atau `RwLock<HashMap<...>>`). Jadi kesimpulannya: Singleton bisa membantu memastikan hanya ada satu instance repository, tetapi Singleton tidak menghilangkan kebutuhan terhadap `DashMap` atau struktur data thread-safe lainnya.
