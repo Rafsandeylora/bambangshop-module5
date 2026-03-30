@@ -157,3 +157,55 @@ Fitur Postman yang menurut saya menarik dan berguna:
    Sangat berguna untuk Group Project karena anggota tim bisa memakai request yang sama tanpa harus membuat ulang satu per satu.
 
 Menurut saya, Postman adalah tool yang sangat praktis untuk software engineering project karena mempercepat proses testing, debugging, dan kolaborasi dalam pengembangan API.
+
+## Reflection Publisher-3
+
+### 1. Observer Pattern memiliki dua variasi: Push model (publisher mendorong data ke subscriber) dan Pull model (subscriber mengambil data dari publisher). Pada kasus tutorial ini, variasi mana yang kita gunakan?
+
+Pada tutorial ini, kita menggunakan **Push model**.
+
+Menurut saya, hal ini terlihat dari cara kerja sistem notifikasi yang sudah kita buat. Saat ada event pada product, misalnya product dibuat, dipromosikan, atau dihapus, pihak publisher langsung menyiapkan payload notifikasi lalu mengirimkannya ke subscriber. Jadi subscriber tidak perlu meminta data sendiri ke publisher. Publisher yang secara aktif “mendorong” data ke subscriber.
+
+Hal ini juga sesuai dengan penjelasan di modul bahwa pada **Push model**, publisher bertanggung jawab membagikan data ke semua observer/subscriber yang terdaftar, biasanya dengan memanggil method `update()`. Pada kasus lintas aplikasi, subscriber bahkan bisa direpresentasikan sebagai objek yang menyimpan URL, lalu `update()` akan mengirim request HTTP ke client app lain. Itu persis seperti yang terjadi di tutorial ini.
+
+### 2. Apa kelebihan dan kekurangan jika kita menggunakan variasi Observer Pattern yang lain? (Misalnya jika pada nomor 1 kita menjawab Push, maka bayangkan jika kita memakai Pull)
+
+Kalau pada tutorial ini kita memakai **Pull model**, maka ada beberapa kemungkinan kelebihan dan kekurangannya.
+
+**Kelebihan Pull model:**
+1. Subscriber memiliki kontrol lebih besar terhadap kapan data diambil.  
+   Jadi subscriber bisa menentukan sendiri kapan ingin meminta update dari publisher.
+2. Payload dari publisher bisa lebih sederhana.  
+   Publisher tidak perlu langsung mengirim seluruh detail notifikasi, karena subscriber bisa meminta data tambahan jika diperlukan.
+3. Bisa lebih fleksibel jika kebutuhan tiap subscriber berbeda.  
+   Misalnya ada subscriber yang hanya butuh sebagian data, dan ada yang butuh data lengkap.
+
+**Kekurangan Pull model:**
+1. Subscriber menjadi lebih aktif dan lebih kompleks.  
+   Subscriber harus tahu bagaimana cara menghubungi publisher dan bagaimana cara mengambil data yang diperlukan.
+2. Tidak cocok untuk kebutuhan notifikasi real-time seperti tutorial ini.  
+   Kalau subscriber hanya menarik data secara berkala, maka update bisa terlambat diterima.
+3. Publisher akan terekspos ke subscriber.  
+   Modul juga menjelaskan bahwa pada Pull model, observer akan terekspos ke subject/publisher karena observer harus aktif meminta data.
+4. Akan menambah jumlah request.  
+   Jika banyak subscriber terus-menerus melakukan polling atau pengecekan ke publisher, maka trafik jaringan bisa bertambah dan sistem menjadi kurang efisien.
+
+Jadi, menurut saya, untuk kasus tutorial BambangShop yang ingin mengirim notifikasi segera ketika ada perubahan product, **Push model lebih cocok** dibanding Pull model.
+
+### 3. Jelaskan apa yang akan terjadi pada program jika kita memutuskan untuk tidak menggunakan multi-threading dalam proses notifikasi
+
+Kalau kita tidak menggunakan multi-threading dalam proses notifikasi, maka pengiriman notifikasi ke subscriber akan berjalan secara **sekuensial** atau satu per satu. Artinya, publisher harus menunggu subscriber pertama selesai diproses dulu, baru lanjut ke subscriber kedua, dan seterusnya.
+
+Dampaknya menurut saya adalah:
+1. **Response program menjadi lebih lambat**  
+   Jika jumlah subscriber banyak, atau ada subscriber yang lambat merespons, maka proses create, publish, atau delete product juga akan ikut melambat karena harus menunggu semua notifikasi selesai dikirim.
+2. **Satu subscriber yang lambat bisa menghambat subscriber lain**  
+   Misalnya ada satu endpoint subscriber yang lambat atau bahkan bermasalah, maka seluruh alur notifikasi akan tertahan.
+3. **User experience menjadi lebih buruk**  
+   Dari sisi pengguna atau client, request ke server bisa terasa lama padahal inti proses bisnisnya sebenarnya sudah selesai lebih cepat.
+4. **Scalability sistem menurun**  
+   Semakin banyak subscriber, semakin besar dampak perlambatan jika semua notifikasi diproses satu per satu.
+5. **Risiko blocking lebih tinggi**  
+   Karena proses network request ke subscriber adalah operasi yang bisa memakan waktu, menjalankannya tanpa multi-threading membuat alur utama aplikasi lebih mudah terblokir.
+
+Karena itu, penggunaan multi-threading pada proses notifikasi di tutorial ini menurut saya sangat membantu agar pengiriman notifikasi ke banyak subscriber bisa berjalan lebih cepat, lebih efisien, dan tidak terlalu menghambat request utama pada publisher.
